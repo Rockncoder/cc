@@ -42,11 +42,14 @@ App.Bob = (function (App, $, iScroll, window) {
   }());
 
   App.Dimensions = (function () {
-    var width, height, headerHeight, footerHeight, contentHeight;
+    var width, height, headerHeight, footerHeight, contentHeight,
+      isIPhone = (/iphone/gi).test(navigator.appVersion);
+    console.log("AppVersion " + navigator.appVersion);
+//    alert("AppVersion " + navigator.appVersion);
     return {
       get: function () {
         width = $(window).width();
-        height = $(window).height();
+        height = $(window).height() + (isIPhone ?  60 : 0);
         headerHeight = $("header", $.mobile.activePage).height() || 0;
         footerHeight = $("footer", $.mobile.activePage).height() || 0;
         contentHeight = height - headerHeight - footerHeight;
@@ -107,6 +110,11 @@ App.Bob = (function (App, $, iScroll, window) {
     return {
       pageshow: function () {
         var dim = App.Dimensions.get();
+
+        App.Fetch.get();
+        var fahr = App.Converter.kelvinToFarenheit(373);
+        console.log("373k = "+fahr+" degrees f");
+
         $("#horizontalWrapper").css('height', dim.height);
         $("#verticalWrapper").css('height', dim.height);
         $('#homePanelReset').on('tap', showListings);
@@ -124,6 +132,7 @@ App.Bob = (function (App, $, iScroll, window) {
       loc,
       mapElement = $("#map").get(0),
       options = {
+        mapTypeControl: false,
         streetViewControl: false,
         zoom: 13,
         mapTypeId: google.maps.MapTypeId.ROADMAP
@@ -184,7 +193,10 @@ App.Bob = (function (App, $, iScroll, window) {
       pageshow: function () {
         var $zipCode = $("#zipCode"),
           $useZipCode = $('#useZipCode'),
-          $searchRadius = $('#searchRadius');
+          $searchRadius = $('#searchRadius'),
+          dim = App.Dimensions.get();
+
+        $("#mySettings").css('height', dim.height);
 
         // set initial values based on preserved ones
         $searchRadius.val(App.Config.searchRadius);
@@ -206,11 +218,43 @@ App.Bob = (function (App, $, iScroll, window) {
     };
   }());
 
+  App.Pages.creditsPage = (function () {
+    return {
+      pageshow: function () {
+        // set the CSS height dynamically
+        var dim = App.Dimensions.get();
+        $("#myCredits").css('height', dim.height);
+//
+//        var $zipCode = $("#zipCode"),
+//          $useZipCode = $('#useZipCode'),
+//          $searchRadius = $('#searchRadius');
+//
+//        // set initial values based on preserved ones
+//        $searchRadius.val(App.Config.searchRadius);
+//        $zipCode.val(App.Config.zipCode);
+//        $useZipCode.val(App.Config.useZipCode);
+//
+//        // listen for changes
+//        $useZipCode.on("change", function (evt) {
+//          $zipCode.textinput(this.value === "on" ? "enable" : "disable");
+//          App.Config.useZipCode = this.value;
+//        });
+//        $zipCode.on('change', function (evt) {
+//          App.Config.zipCode = this.value;
+//        });
+//        $searchRadius.on('change', function (evt) {
+//          App.Config.searchRadius = this.value;
+//        });
+      }
+    };
+  }());
+
   App.Pages.detailsPage = (function () {
     var myScroll, map, loc,
       latLong = new google.maps.LatLng(34.0522, -118.2428),
       mapElement = $("#miniMap").get(0),
       options = {
+        mapTypeControl: false,
         streetViewControl: false,
         center: latLong,
         zoom: 13,
@@ -269,6 +313,68 @@ App.Bob = (function (App, $, iScroll, window) {
       pagehide: function () {
         myScroll.destroy();
         myScroll = null;
+      }
+    };
+  }());
+
+
+  App.Pages.twoWayPage = (function () {
+    var dim, verticalScroller, horizontalScroller, pullDownEl, pullDownHeight, $pullDown, $pullDownLabel,
+      callRefresh = function() {
+        setTimeout(function(){
+          verticalScroller.refresh();
+        },2000);
+      };
+    return {
+      pageshow:function () {
+        // determine the height dynamically
+        dim = App.Dimensions.get();
+        $("#vWrapper").css('height', dim.height);
+
+        $pullDown = $('#pullDown');
+        $pullDownLabel = $pullDown.find('.pullDownLabel');
+        pullDownEl = document.getElementById('pullDown');
+        pullDownHeight = $pullDown.outerHeight();
+
+        verticalScroller = new iScroll('vWrapper', {
+            topOffset:pullDownHeight,
+            useTransition:true,
+            hScrollbar: false,
+            vScrollbar: false,
+            onRefresh:function () {
+              if($pullDown.hasClass('loading')){
+                $pullDown.removeClass();
+                $pullDownLabel.html('Pull down to refresh...');
+              }
+            },
+            onScrollMove:function () {
+              if (this.y > 5 && !$pullDown.hasClass('flip')) {
+                $pullDown.addClass('flip');
+                $pullDownLabel.html('Release to refresh...');
+                this.minScrollY = 0;
+              } else if (this.y < 5 && $pullDown.hasClass('flip')) {
+                $pullDown.removeClass();
+                $pullDownLabel.html('Pull down to refresh...');
+                this.minScrollY = -pullDownHeight;
+              }
+            },
+            onScrollEnd:function () {
+              if ($pullDown.hasClass('flip')) {
+                $pullDown.removeClass();
+                $pullDown.addClass('loading');
+                $pullDownLabel.html('Loading...')
+                callRefresh();
+              }
+            }
+          }
+        );
+        horizontalScroller = new iScroll('hWrapper');
+      },
+      pagehide:function () {
+        verticalScroller.destroy();
+        verticalScroller = null;
+        horizontalScroller.destroy();
+        horizontalScroller = null;
       }
     };
   }());

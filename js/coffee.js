@@ -15,7 +15,7 @@ App.Coffee = (function () {
     currentPage = 1,
     listings = null,
     totalPage = 0,
-    location = "90023"; //"92705";
+    location = "90023";
 
   return {
     getBusiness: function(id){
