@@ -29,18 +29,19 @@
 <body>
 
 <script id="listing-template" type="text/x-handlebars-template">
-  <ul id="cafes" data-role="listview">
-    {{#each searchListings.searchListing}}
-    <li><a href="#detailsPage" data-rnc-listingId="{{this.listingId}}" class="listing" >
-      <h2>{{this.businessName}}</h2>
-      <p><strong>{{this.street}}, {{this.city}}, {{this.state}} {{this.zip}}</strong></p>
-      <p>{{this.distance}} miles away</p>
+  <div id="pullDown">
+    <span class="pullDownIcon"></span><span class="pullDownLabel">Pull down to refresh...</span>
+  </div>
+  <ul id="cafes" data-role="listview" >
+    {{#each listings}}
+    <li><a href="#detailsPage" data-rnc-listingId="{{listingId}}" class="listing" data-transition="slide" >
+      <h2>{{businessName}}</h2>
+      <p><strong>{{street}}, {{city}}, {{state}} {{zip}}</strong></p>
+      <p>{{distance}} miles away</p>
     </a></li>
     {{/each}}
   </ul>
 </script>
-<!--<a id="prevListing" href="#{{metaProperties.inputParams.pageNum}}">prev</a>-->
-<!--<a id="nextListing" href="#{{metaProperties.inputParams.pageNum}}">next</a>-->
 
 <script id="details-template" type="text/x-handlebars-template">
   <div class="details-wrapper">
@@ -54,49 +55,68 @@
   </div>
 </script>
 
-<div id="splashPage" data-role="page" data-app-jspage="splashPage">
-  <section data-role="content" id="splashContent" style="padding: 16px 0 0 0; margin: 0;">
-    <img src="css/kitchen-coffee_cup.png" />
-  </section>
-</div>
+<!--<div id="page1" data-role="page" data-app-jspage="homePage">-->
+  <!--&lt;!&ndash; menu panel &ndash;&gt;-->
+  <!--<div data-role="panel" id="homePanel" class="a-panel">-->
+    <!--<ul data-role="listview" data-inset="true" data-theme="b">-->
+      <!--&lt;!&ndash;<li><a href="#page1" data-transition="slide">Listings</a></li>&ndash;&gt;-->
+      <!--<li><a href="#pageScroll" data-transition="slide">Listings</a></li>-->
+      <!--<li><a href="#mapPage" data-transition="slide">Map</a></li>-->
+      <!--<li><a href="#settingsPage" data-transition="slide">Settings</a></li>-->
+      <!--<li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>-->
+    <!--</ul>-->
+  <!--</div>-->
+  <!--<header data-role="header" data-position="fixed" data-theme="b">-->
+    <!--<a href="#homePanel" data-icon="bars" data-iconpos="notext"></a>-->
+    <!--<h1>Coffee+Coffee</h1>-->
+    <!--<a id="homePanelReset" href="#" data-icon="refresh" data-iconpos="notext"></a>-->
+  <!--</header>-->
+  <!--<section data-role="content">-->
+    <!--<div id="locations" class="locations"></div>-->
+  <!--</section>-->
+  <!--<footer data-role="footer" data-position="fixed">-->
+    <!--<h1></h1>-->
+  <!--</footer>-->
+<!--</div>-->
 
-<div id="page1" data-role="page" data-app-jspage="homePage" data-transition="slide">
+<div id="pageScroll" data-role="page" data-app-jspage="pageScroll">
   <!-- menu panel -->
-  <div data-role="panel" id="homePanel" class="a-panel">
+  <div data-role="panel" id="pageScrollPanel" class="a-panel">
     <ul data-role="listview" data-inset="true" data-theme="b">
-      <li><a href="#page1">Listings</a></li>
-      <li><a href="#mapPage">Map</a></li>
-      <li><a href="#settingsPage">Settings</a></li>
-      <li><a href="#creditsPage">About/Credits</a></li>
-      <!--<li><a href="#verticalPage">Vertical Scrolling</a></li>-->
-      <!--<li><a href="#horizontalPage">Horizontal Scrolling</a></li>-->
-      <!--<li><a href="#twoWayPage">Two Way Scrolling</a></li>-->
+      <!--<li><a href="#page1" data-transition="slide">Listings</a></li>-->
+      <li><a href="#pageScroll" data-transition="slide">Listings</a></li>
+      <li><a href="#mapPage" data-transition="slide">Map</a></li>
+      <li><a href="#settingsPage" data-transition="slide">Settings</a></li>
+      <li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>
     </ul>
   </div>
   <header data-role="header" data-position="fixed" data-theme="b">
-    <a href="#homePanel" data-icon="bars" data-iconpos="notext"></a>
+    <a href="#pageScrollPanel" data-icon="bars" data-iconpos="notext"></a>
     <h1>Coffee+Coffee</h1>
-    <a id="homePanelReset" href="#" data-icon="refresh" data-iconpos="notext"></a>
+    <a id="pageScrollPanelReset" href="#" data-icon="refresh" data-iconpos="notext"></a>
   </header>
-  <section data-role="content">
-    <div id="locations" class="locations"></div>
+  <section data-role="content"  class="scroller">
+    <div id="psWrapper" class="verticalWrapper">
+      <div id="psScroller" class="verticalScroller">
+      </div>
+    </div>
+
+    <div id="psListings" class="locations"></div>
   </section>
   <footer data-role="footer" data-position="fixed">
     <h1></h1>
   </footer>
 </div>
 
-<div id="mapPage" data-role="page" data-app-jspage="mapPage" data-transition="slide">
+<div id="mapPage" data-role="page" data-app-jspage="mapPage">
   <!-- menu panel -->
   <div data-role="panel" id="mapPanel" class="a-panel">
     <ul data-role="listview" data-inset="true" data-theme="b">
-      <li><a href="#page1">Listings</a></li>
-      <li><a href="#mapPage">Map</a></li>
-      <li><a href="#settingsPage">Settings</a></li>
-      <li><a href="#creditsPage">About/Credits</a></li>
-      <!--<li><a href="#verticalPage">Vertical Scrolling</a></li>-->
-      <!--<li><a href="#horizontalPage">Horizontal Scrolling</a></li>-->
-      <!--<li><a href="#twoWayPage">Two Way Scrolling</a></li>-->
+      <!--<li><a href="#page1" data-transition="slide">Listings</a></li>-->
+      <li><a href="#pageScroll" data-transition="slide">Listings</a></li>
+      <li><a href="#mapPage" data-transition="slide">Map</a></li>
+      <li><a href="#settingsPage" data-transition="slide">Settings</a></li>
+      <li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>
     </ul>
   </div>
   <header data-role="header" data-position="fixed" data-theme="b">
@@ -111,17 +131,15 @@
   </footer>
 </div>
 
-<div id="settingsPage" data-role="page" data-app-jspage="settingsPage" data-transition="slide">
+<div id="settingsPage" data-role="page" data-app-jspage="settingsPage">
   <!-- menu panel -->
   <div data-role="panel" id="settingsPanel" class="a-panel">
     <ul data-role="listview" data-inset="true"  data-theme="b">
-      <li><a href="#page1">Listings</a></li>
-      <li><a href="#mapPage">Map</a></li>
-      <li><a href="#settingsPage">Settings</a></li>
-      <li><a href="#creditsPage">About/Credits</a></li>
-      <!--<li><a href="#verticalPage">Vertical Scrolling</a></li>-->
-      <!--<li><a href="#horizontalPage">Horizontal Scrolling</a></li>-->
-      <!--<li><a href="#twoWayPage">Two Way Scrolling</a></li>-->
+      <!--<li><a href="#page1" data-transition="slide">Listings</a></li>-->
+      <li><a href="#pageScroll" data-transition="slide">Listings</a></li>
+      <li><a href="#mapPage" data-transition="slide">Map</a></li>
+      <li><a href="#settingsPage" data-transition="slide">Settings</a></li>
+      <li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>
     </ul>
   </div>
   <header data-role="header" data-position="fixed" data-theme="b">
@@ -136,12 +154,12 @@
           <option value="off">Off</option>
           <option value="on">On</option>
         </select>
-        <input type="text" id="zipCode" placeholder="Enter ZIP Code" disabled />
+        <input type="number" id="zipCode" placeholder="Enter ZIP Code" disabled />
       </div>
       <div data-role="fieldcontain" id="slider1">
         <label for="searchRadius">Search Radius</label>
       </div>
-      <input type="range" id="searchRadius" value="10" min="5" max="50" step="1" data-mini="true">
+      <input type="range" id="searchRadius" value="10" min="5" max="50" step="1"  data-track-theme="e" data-theme="a">
     </div>
   </section>
   <footer data-role="footer" data-position="fixed">
@@ -153,13 +171,11 @@
   <!-- menu panel -->
   <div data-role="panel" id="creditsPanel" class="a-panel">
     <ul data-role="listview" data-inset="true" data-theme="b">
-      <li><a href="#page1">Listings</a></li>
-      <li><a href="#mapPage">Map</a></li>
-      <li><a href="#settingsPage">Settings</a></li>
-      <li><a href="#creditsPage">About/Credits</a></li>
-      <!--<li><a href="#verticalPage">Vertical Scrolling</a></li>-->
-      <!--<li><a href="#horizontalPage">Horizontal Scrolling</a></li>-->
-      <!--<li><a href="#twoWayPage">Two Way Scrolling</a></li>-->
+      <!--<li><a href="#page1" data-transition="slide">Listings</a></li>-->
+      <li><a href="#pageScroll" data-transition="slide">Listings</a></li>
+      <li><a href="#mapPage" data-transition="slide">Map</a></li>
+      <li><a href="#settingsPage" data-transition="slide">Settings</a></li>
+      <li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>
     </ul>
   </div>
   <header data-role="header" data-position="fixed" data-theme="b">
@@ -169,6 +185,7 @@
   <section data-role="content" id="myCredits">
     <div style="text-align: center;">
       <b>Coffee+Coffee</b> <br />
+      version 0.5<br/><br/>
       designed & developed by<br />
       the Rockncoder<br/> <br />
       Built using: <br/>
@@ -183,14 +200,28 @@
   </footer>
 </div>
 
+<div id="detailsPage" data-role="page" data-app-jspage="detailsPage">
+  <header data-role="header" data-position="fixed" data-theme="b">
+    <a href="#" data-icon="back" data-rel="back" data-iconpos="notext" data-transition="slide" data-direction="reverse"></a>
+    <h1>Coffee+Coffee</h1>
+  </header>
+  <section data-role="content">
+    <div id="detailsContent">
+    </div>
+    <div id="miniMap">
+    </div>
+  </section>
+</div>
+
 <div id="verticalPage" data-role="page" data-app-jspage="verticalPage">
   <!-- panel -->
   <div data-role="panel" id="verticalPanel" >
     <ul data-role="listview" data-inset="true" data-theme="b">
-      <li><a href="#page1">Listings</a></li>
-      <li><a href="#mapPage">Map</a></li>
-      <li><a href="#settingsPage">Settings</a></li>
-      <li><a href="#creditsPage">About/Credits</a></li>
+      <li><a href="#page1" data-transition="slide">Listings</a></li>
+      <li><a href="#page1" data-transition="slide">Listings</a></li>
+      <li><a href="#mapPage" data-transition="slide">Map</a></li>
+      <li><a href="#settingsPage" data-transition="slide">Settings</a></li>
+      <li><a href="#creditsPage" data-transition="slide">About/Credits</a></li>
       <!--<li><a href="#verticalPage">Vertical Scrolling</a></li>-->
       <!--<li><a href="#horizontalPage">Horizontal Scrolling</a></li>-->
       <!--<li><a href="#twoWayPage">Two Way Scrolling</a></li>-->
@@ -375,19 +406,6 @@
   <footer data-role="footer" data-position="fixed">
     <h1>(footer)</h1>
   </footer>
-</div>
-
-<div id="detailsPage" data-role="page" data-app-jspage="detailsPage">
-  <header data-role="header" data-position="fixed" data-theme="b">
-    <a href="#" data-icon="back" data-rel="back" data-iconpos="notext"></a>
-    <h1>Coffee+Coffee</h1>
-  </header>
-  <section data-role="content">
-    <div id="detailsContent">
-    </div>
-    <div id="miniMap">
-    </div>
-  </section>
 </div>
 
 <script src="js/libs/underscore-1.4.4.min.js" type="text/javascript"></script>

@@ -1,14 +1,6 @@
 ﻿var App = App || {};
 
-(function (App, $, iScroll, window) {
-  "use strict";
-
-  $("#splashPage").one("pageinit", function (event) {
-    App.Bob(App, $, iScroll, window);
-  });
-}(App, $, iScroll, window));
-
-App.Bob = (function (App, $, iScroll, window) {
+App.Code = (function (App, $, iScroll, window) {
   "use strict";
 
   var detailsSource = $("#details-template").html();
@@ -44,12 +36,10 @@ App.Bob = (function (App, $, iScroll, window) {
   App.Dimensions = (function () {
     var width, height, headerHeight, footerHeight, contentHeight,
       isIPhone = (/iphone/gi).test(navigator.appVersion);
-    console.log("AppVersion " + navigator.appVersion);
-//    alert("AppVersion " + navigator.appVersion);
     return {
       get: function () {
         width = $(window).width();
-        height = $(window).height() + (isIPhone ?  60 : 0);
+        height = $(window).height() + (isIPhone ? 60 : 0);
         headerHeight = $("header", $.mobile.activePage).height() || 0;
         footerHeight = $("footer", $.mobile.activePage).height() || 0;
         contentHeight = height - headerHeight - footerHeight;
@@ -62,62 +52,164 @@ App.Bob = (function (App, $, iScroll, window) {
     };
   }());
 
-  App.Pages.splashPage = (function () {
-    var timeHandle = null,
-      $splash = $("#splashContent"),
-      changePg = function () {
-        $.mobile.changePage("#page1");
-      };
-    return {
-      pageshow: function () {
-        // set the CSS height dynamically
-        // height will give us a taller hit target region
-        var dim = App.Dimensions.get();
-        $splash.css('height', dim.height);
-        // if the user taps, clicks, or swipes go to the next page
-        $splash.on("tap click swiperight swipeleft swipe", changePg);
-        // wait 3 seconds
-        timeHandle = setTimeout(function () {
-          changePg();
-          timeHandle = null;
-        }, 3000);
-      },
-      pagehide: function () {
-        // if the timer hasn't been cleared already, clear it
-        if (timeHandle) {
-          clearTimeout(timeHandle);
-          timeHandle = null;
-        }
-      }
-    };
-  }());
-
   App.Pages.homePage = (function () {
     var isShowingListings = false,
-      showListings = function () {
-        $.mobile.loading("show");
-        $(window).one("rnc_position", function (evt, latitude, longitude, accuracy) {
-          App.Coffee.get({location: latitude + ":" + longitude}, function (listings) {
-            $.mobile.loading("hide");
-            App.Coffee.showCurrentListing();
-            isShowingListings = true;
-            $(".listing").off().on("click", function (evt) {
-              App.CurrentListing = this.attributes.getNamedItem("data-rnc-listingid").value;
-            });
+      getListings = function (location) {
+        App.Coffee.get(location, function () {
+          $.mobile.loading("hide");
+          App.Coffee.showCurrentListing("locations");
+          isShowingListings = true;
+          $('#locations').find("ul").css('margin');
+
+          $(".listing").off().on("click", function () {
+            App.CurrentListing = this.attributes.getNamedItem("data-rnc-listingid").value;
           });
         });
+      },
+      showListings = function () {
+        $.mobile.loading("show");
+        if (App.Location.isEnabled()) {
+          $(window).one("rnc_position", function (evt, latitude, longitude, accuracy) {
+            getListings({location: latitude + ":" + longitude});
+          });
+        } else {
+          getListings({location: App.Config.zipCode})
+        }
       };
     return {
       pageshow: function () {
         var dim = App.Dimensions.get();
-
-        App.Fetch.get();
-        var fahr = App.Converter.kelvinToFarenheit(373);
-        console.log("373k = "+fahr+" degrees f");
 
         $("#horizontalWrapper").css('height', dim.height);
         $("#verticalWrapper").css('height', dim.height);
         $('#homePanelReset').on('tap', showListings);
+
+        if (!isShowingListings) {
+          showListings();
+        }
+      },
+      pagehide: function () {
+      }
+    };
+  }());
+
+  App.Pages.pageScroll = (function () {
+    var isShowingListings = false,
+      myScroll = null,  //new iScroll('psWrapper'),
+      pullDownHeight, $pullDown, $pullDownLabel,
+
+      callRefresh = function () {
+        App.Coffee.next(function(){
+          var $psScroller = $('#psScroller');
+
+          /* remove the loading spinner */
+          $.mobile.loading("hide");
+          /* load the new listing */
+          App.Coffee.showCurrentListing("psScroller");
+          isShowingListings = true;
+
+          /* dynamically adjust the height of the scrollable region */
+          $psScroller.find("ul").css('margin', 0);
+          var $rows = $psScroller.find("ul > li"), $refresh = $psScroller.find('> div');
+          $psScroller.height($rows.eq(0).outerHeight() * $rows.length + $refresh.outerHeight());
+
+          /* set a click event on each row  */
+          $(".listing").off().on("click", function () {
+            App.CurrentListing = this.attributes.getNamedItem("data-rnc-listingid").value;
+          });
+
+
+          setTimeout(function () {
+            myScroll.refresh();
+          }, 0)
+        });
+      },
+
+      getListings = function (location) {
+        App.Coffee.get(location, function () {
+          var $psScroller = $('#psScroller');
+
+          /* remove the loading spinner */
+          $.mobile.loading("hide");
+          /* load the new listing */
+          App.Coffee.showCurrentListing("psScroller");
+          isShowingListings = true;
+
+          /* dynamically adjust the height of the scrollable region */
+          $psScroller.find("ul").css('margin', 0);
+          var $rows = $psScroller.find("ul > li"), $refresh = $psScroller.find('> div');
+          $psScroller.height($rows.eq(0).outerHeight() * $rows.length + $refresh.outerHeight());
+
+          /* set a click event on each row  */
+          $(".listing").off().on("click", function () {
+            App.CurrentListing = this.attributes.getNamedItem("data-rnc-listingid").value;
+          });
+
+          if (!myScroll) {
+            $pullDown = $('#pullDown');
+            $pullDownLabel = $pullDown.find('.pullDownLabel');
+            pullDownHeight = $refresh.outerHeight();
+
+            myScroll = new iScroll('psWrapper', {
+                topOffset: pullDownHeight,
+                useTransition: true,
+                hScrollbar: false,
+                vScrollbar: false,
+                onRefresh: function () {
+                  if ($pullDown.hasClass('loading')) {
+                    $pullDown.removeClass();
+                    $pullDownLabel.html('Pull down to refresh...');
+                  }
+                },
+                onScrollMove: function () {
+                  if (this.y > 5 && !$pullDown.hasClass('flip')) {
+                    $pullDown.addClass('flip');
+                    $pullDownLabel.html('Release to refresh...');
+                    this.minScrollY = 0;
+                  } else if (this.y < 5 && $pullDown.hasClass('flip')) {
+                    $pullDown.removeClass();
+                    $pullDownLabel.html('Pull down to refresh...');
+                    this.minScrollY = -pullDownHeight;
+                  }
+                },
+                onScrollEnd: function () {
+                  if ($pullDown.hasClass('flip')) {
+                    $pullDown.removeClass();
+                    $pullDown.addClass('loading');
+                    $pullDownLabel.html('Loading...')
+                    callRefresh();
+                  }
+                }
+              }
+            );
+          }
+
+          setTimeout(function () {
+            myScroll.refresh();
+          }, 0)
+        });
+      },
+      showListings = function () {
+        $.mobile.loading("show");
+        if (App.Location.isEnabled()) {
+          if (App.Location.hasSet()) {
+            var loc = App.Location.get();
+            getListings({location: loc.latitude + ":" + loc.longitude});
+          } else {
+            $(window).one("rnc_position", function (evt, latitude, longitude, accuracy) {
+              getListings({location: latitude + ":" + longitude});
+            });
+          }
+        } else {
+          getListings({location: App.Config.zipCode})
+        }
+      };
+    return {
+      pageshow: function () {
+        var dim = App.Dimensions.get();
+        $("#psWrapper").css('height', dim.height);
+        $('#pageScrollPanelReset').on('tap', showListings);
+
         if (!isShowingListings) {
           showListings();
         }
@@ -129,13 +221,21 @@ App.Bob = (function (App, $, iScroll, window) {
 
   App.Pages.mapPage = (function () {
     var map, marker, markers = [],
-      loc,
+      scale = [
+        0, 0, 0, 0, 15, 15, 15, 15, 15, 15,
+        15, 14, 14, 14, 14, 14, 14, 14, 13, 13,
+        13, 13, 13, 13, 13, 12, 12, 12, 12, 12,
+        12, 12, 11, 11, 11, 11, 11, 11, 11, 11,
+        10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+      ],
       mapElement = $("#map").get(0),
-      options = {
-        mapTypeControl: false,
-        streetViewControl: false,
-        zoom: 13,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
+      getOptions = function (radius) {
+        return {
+          mapTypeControl: false,
+          streetViewControl: false,
+          zoom: scale[(radius - 1) % 50],
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
       },
       drawMarkers = function (map, listings) {
         var biz, ndx, len = listings.length;
@@ -150,7 +250,7 @@ App.Bob = (function (App, $, iScroll, window) {
           markers.push(marker);
           google.maps.event.addListener(marker, 'click', function (evt) {
             App.CurrentListing = this.bizId;
-            $.mobile.changePage("#detailsPage");
+            $.mobile.changePage("#detailsPage", {transition: "slide"});
           });
         }
       },
@@ -166,14 +266,9 @@ App.Bob = (function (App, $, iScroll, window) {
         if (listings) {
           drawMarkers(map, listings);
         }
-      };
-    return {
-      pageshow: function () {
-        // set the CSS height dynamically
-        var dim = App.Dimensions.get();
-        $("#map").css('height', dim.height);
-
-        loc = App.Location.get();
+      },
+      showMap = function (loc) {
+        var options = getOptions(App.Config.searchRadius);
         options.center = new google.maps.LatLng(loc.latitude, loc.longitude);
         map = new google.maps.Map(mapElement, options);
 
@@ -181,9 +276,26 @@ App.Bob = (function (App, $, iScroll, window) {
           var loc = App.Location.get();
           map.setCenter(new google.maps.LatLng(loc.latitude, loc.longitude));
         });
-        // draw markers on the map
+        /* draw markers on the map */
         eraseMarkers(map);
         updateMap(map);
+      };
+    return {
+      pageshow: function () {
+        /* set the CSS height dynamically */
+        var dim = App.Dimensions.get();
+        $("#map").css('height', dim.height);
+
+        if (App.Location.isEnabled()) {
+          showMap(App.Location.get());
+        } else {
+          App.Location.codeAddress(App.Config.zipCode, function (loc) {
+            if (loc) {
+              console.log("codeAddress returned " + JSON.stringify(loc));
+              showMap(loc);
+            }
+          });
+        }
       }
     };
   }());
@@ -201,9 +313,17 @@ App.Bob = (function (App, $, iScroll, window) {
         // set initial values based on preserved ones
         $searchRadius.val(App.Config.searchRadius);
         $zipCode.val(App.Config.zipCode);
-        $useZipCode.val(App.Config.useZipCode);
 
-        // listen for changes
+        if (!App.Location.isEnabled()) {
+          $useZipCode.val("on");
+          $useZipCode.slider("refresh").slider("disable");
+          $zipCode.textinput("enable");
+        } else {
+          $useZipCode.val(App.Config.useZipCode);
+          $zipCode.textinput($useZipCode.val("on") === "on" ? "enable" : "disable");
+        }
+
+        /* listen for changes */
         $useZipCode.on("change", function (evt) {
           $zipCode.textinput(this.value === "on" ? "enable" : "disable");
           App.Config.useZipCode = this.value;
@@ -221,36 +341,15 @@ App.Bob = (function (App, $, iScroll, window) {
   App.Pages.creditsPage = (function () {
     return {
       pageshow: function () {
-        // set the CSS height dynamically
+        /* set the CSS height dynamically */
         var dim = App.Dimensions.get();
         $("#myCredits").css('height', dim.height);
-//
-//        var $zipCode = $("#zipCode"),
-//          $useZipCode = $('#useZipCode'),
-//          $searchRadius = $('#searchRadius');
-//
-//        // set initial values based on preserved ones
-//        $searchRadius.val(App.Config.searchRadius);
-//        $zipCode.val(App.Config.zipCode);
-//        $useZipCode.val(App.Config.useZipCode);
-//
-//        // listen for changes
-//        $useZipCode.on("change", function (evt) {
-//          $zipCode.textinput(this.value === "on" ? "enable" : "disable");
-//          App.Config.useZipCode = this.value;
-//        });
-//        $zipCode.on('change', function (evt) {
-//          App.Config.zipCode = this.value;
-//        });
-//        $searchRadius.on('change', function (evt) {
-//          App.Config.searchRadius = this.value;
-//        });
       }
     };
   }());
 
   App.Pages.detailsPage = (function () {
-    var myScroll, map, loc,
+    var map,
       latLong = new google.maps.LatLng(34.0522, -118.2428),
       mapElement = $("#miniMap").get(0),
       options = {
@@ -263,11 +362,9 @@ App.Bob = (function (App, $, iScroll, window) {
       $details = $("#detailsContent");
     return {
       pageshow: function () {
-        // set the CSS height dynamically
+        /* set the CSS height dynamically */
         var info = App.Coffee.getBusiness(App.CurrentListing),
-          divHeight, totalHeight,
-          bob,
-          marker,
+          divHeight, totalHeight, ctr, marker,
           infoWindow = new google.maps.InfoWindow({}),
           dim = App.Dimensions.get();
 
@@ -275,11 +372,11 @@ App.Bob = (function (App, $, iScroll, window) {
         divHeight = $details.height();
         totalHeight = dim.height - divHeight - 32;
         $("#miniMap").css('height', totalHeight);
-        bob = new google.maps.LatLng(info.latitude, info.longitude);
-        options.center = bob;
+        ctr = new google.maps.LatLng(info.latitude, info.longitude);
+        options.center = ctr;
         map = new google.maps.Map(mapElement, options);
         marker = new google.maps.Marker({
-          position: bob,
+          position: ctr,
           map: map
         });
         google.maps.event.addListener(marker, 'click', function () {
@@ -317,65 +414,4 @@ App.Bob = (function (App, $, iScroll, window) {
     };
   }());
 
-
-  App.Pages.twoWayPage = (function () {
-    var dim, verticalScroller, horizontalScroller, pullDownEl, pullDownHeight, $pullDown, $pullDownLabel,
-      callRefresh = function() {
-        setTimeout(function(){
-          verticalScroller.refresh();
-        },2000);
-      };
-    return {
-      pageshow:function () {
-        // determine the height dynamically
-        dim = App.Dimensions.get();
-        $("#vWrapper").css('height', dim.height);
-
-        $pullDown = $('#pullDown');
-        $pullDownLabel = $pullDown.find('.pullDownLabel');
-        pullDownEl = document.getElementById('pullDown');
-        pullDownHeight = $pullDown.outerHeight();
-
-        verticalScroller = new iScroll('vWrapper', {
-            topOffset:pullDownHeight,
-            useTransition:true,
-            hScrollbar: false,
-            vScrollbar: false,
-            onRefresh:function () {
-              if($pullDown.hasClass('loading')){
-                $pullDown.removeClass();
-                $pullDownLabel.html('Pull down to refresh...');
-              }
-            },
-            onScrollMove:function () {
-              if (this.y > 5 && !$pullDown.hasClass('flip')) {
-                $pullDown.addClass('flip');
-                $pullDownLabel.html('Release to refresh...');
-                this.minScrollY = 0;
-              } else if (this.y < 5 && $pullDown.hasClass('flip')) {
-                $pullDown.removeClass();
-                $pullDownLabel.html('Pull down to refresh...');
-                this.minScrollY = -pullDownHeight;
-              }
-            },
-            onScrollEnd:function () {
-              if ($pullDown.hasClass('flip')) {
-                $pullDown.removeClass();
-                $pullDown.addClass('loading');
-                $pullDownLabel.html('Loading...')
-                callRefresh();
-              }
-            }
-          }
-        );
-        horizontalScroller = new iScroll('hWrapper');
-      },
-      pagehide:function () {
-        verticalScroller.destroy();
-        verticalScroller = null;
-        horizontalScroller.destroy();
-        horizontalScroller = null;
-      }
-    };
-  }());
-});
+}(App, jQuery, iScroll, window));

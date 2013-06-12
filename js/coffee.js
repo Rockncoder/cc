@@ -12,81 +12,91 @@ App.Coffee = (function () {
     apiKey = "896eaa9f49a1c77a595b7d3279a1c464",
     term = "coffee",
     numListing = 20,
+
     currentPage = 1,
     listings = null,
-    totalPage = 0,
-    location = "90023";
+    results = null,
+    totalPages = 0,
+    totalAvailable = 0,
+    location = "90023",
+    fetch = function (callback) {
+      var radius = App.Config.searchRadius;
+
+      $.ajax({
+        url: "http://api2.yp.com/listings/v1/search?searchloc=" + location + "&pagenum=" + currentPage + "&term=" + term + "&format=json&sort=distance&radius=" + radius + "&listingcount=" + numListing + "&key=" + apiKey,
+        dataType: "JSONP"
+      }).done(function (data) {
+          var meta;
+          console.log("Starting next finished");
+          if (data && data.searchResult && data.searchResult.metaProperties) {
+            meta = data.searchResult.metaProperties;
+
+            if (meta.resultCode === "Success") {
+              totalAvailable = meta.totalAvailable;
+              totalPages = Math.ceil(totalAvailable / numListing);
+              var temp = data.searchResult.searchListings.searchListing;
+              listings = temp.concat(listings);
+              results = data.searchResult;
+
+              if (callback) {
+                callback(listings);
+              }
+            }
+          }
+        });
+    };
 
   return {
-    getBusiness: function(id){
+    getBusiness: function (id) {
       var item, ndx,
         results = null,
-        list = listings.searchListings.searchListing,
+        list = listings,
         len = list.length;
       id = +id;
-      for(ndx=0; ndx < len; ndx += 1){
+      for (ndx = 0; ndx < len; ndx += 1) {
         item = list[ndx];
-        if(item.listingId === id){
+        if (item.listingId === id) {
           results = item;
           break;
         }
       }
       return results;
     },
-    previousListings:function () {
+    previousListings: function () {
 
     },
-    nextListings:function () {
+    nextListings: function () {
 
     },
-    showCurrentListing:function () {
+    showCurrentListing: function (listingId) {
       var stripPageNum = function (that) {
         var pageNum = +$(that).attr("href").replace("#", "");
         return pageNum;
       };
-      totalPage = listings.metaProperties.totalAvailable;
-      $("#prevListing").off();
-      $("#nextListing").off();
-      $("#locations").html(template(listings)).trigger("create");
-
-      if (currentPage < 2) {
-        $("#prevListing").hide();
-      }
-
-      if (currentPage * numListing > totalPage) {
-        $("#nextListing").hide();
+      $("#" + listingId).html(template({listings: listings})).trigger("create");
+    },
+    getBusinesses: function () {
+      return listings;
+    },
+    next: function (callback) {
+      if (currentPage < totalPages) {
+        currentPage++;
+        fetch(callback);
       }
     },
-    getBusinesses: function() {
-      var list, results = null;
-
-      if(listings && listings.searchListings && listings.searchListings.searchListing){
-        results = listings.searchListings.searchListing;
-      }
-      return results;
-    },
-    get:function (options, callback) {
-      var radius = App.Config.searchRadius;
+    get: function (options, callback) {
 
       if (options) {
         currentPage = options.currentPage || currentPage;
         location = options.location || location;
       }
 
-      if(App.Config.useZipCode === "on"){
+      if (App.Config.useZipCode === "on") {
         location = App.Config.zipCode;
       }
 
-      $.ajax({
-        url:"http://api2.yp.com/listings/v1/search?searchloc=" + location + "&pagenum=" + currentPage + "&term=" + term + "&format=json&sort=distance&radius="+radius+"&listingcount=" + numListing + "&key=" + apiKey,
-        dataType:"JSONP"
-      }).done(function (data) {
-          listings = data.searchResult;
-          //debugger;
-          if (callback) {
-            callback(listings);
-          }
-        });
+      listings = [];
+      fetch(callback);
     }
   };
 })();

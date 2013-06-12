@@ -39,13 +39,14 @@ section, .a-panel {
 
 #verticalScroller, .verticalScroller {
     width: 100%;
-    height: 3231px;   /* max number scroll elements + 1 times their height */
+    /*    height: 3231px;   max number scroll elements + 1 times their height */
     background-color: #f00;
+    height: 100%;
 }
 
 #verticalScroller li, .verticalScroller li {
     width: 100%;
-    height: 120px;  /* this is the height of an individual element */
+    /* height: 120px;   this is the height of an individual element */
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #fff;
 }
