@@ -52,47 +52,6 @@ App.Code = (function (App, $, iScroll, window) {
     };
   }());
 
-  App.Pages.homePage = (function () {
-    var isShowingListings = false,
-      getListings = function (location) {
-        App.Coffee.get(location, function () {
-          $.mobile.loading("hide");
-          App.Coffee.showCurrentListing("locations");
-          isShowingListings = true;
-          $('#locations').find("ul").css('margin');
-
-          $(".listing").off().on("click", function () {
-            App.CurrentListing = this.attributes.getNamedItem("data-rnc-listingid").value;
-          });
-        });
-      },
-      showListings = function () {
-        $.mobile.loading("show");
-        if (App.Location.isEnabled()) {
-          $(window).one("rnc_position", function (evt, latitude, longitude, accuracy) {
-            getListings({location: latitude + ":" + longitude});
-          });
-        } else {
-          getListings({location: App.Config.zipCode})
-        }
-      };
-    return {
-      pageshow: function () {
-        var dim = App.Dimensions.get();
-
-        $("#horizontalWrapper").css('height', dim.height);
-        $("#verticalWrapper").css('height', dim.height);
-        $('#homePanelReset').on('tap', showListings);
-
-        if (!isShowingListings) {
-          showListings();
-        }
-      },
-      pagehide: function () {
-      }
-    };
-  }());
-
   App.Pages.pageScroll = (function () {
     var isShowingListings = false,
       myScroll = null,  //new iScroll('psWrapper'),
