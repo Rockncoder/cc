@@ -39,7 +39,7 @@ App.Code = (function (App, $, iScroll, window) {
     return {
       get: function () {
         width = $(window).width();
-        height = $(window).height() + (isIPhone ? 60 : 0);
+        height = $(window).height();  // + (isIPhone ? 40 : 0);
         headerHeight = $("header", $.mobile.activePage).height() || 0;
         footerHeight = $("footer", $.mobile.activePage).height() || 0;
         contentHeight = height - headerHeight - footerHeight;

@@ -9,7 +9,8 @@ var App = App || {};
 App.Coffee = (function () {
   var source = $("#listing-template").html(),
     template = Handlebars.compile(source),
-    apiKey = "e7d0e9dca9eb69db93ed1c431a92074e",
+//    apiKey = "e7d0e9dca9eb69db93ed1c431a92074e",
+      apiKey = "7q18gks12g",
     term = "coffee",
     numListing = 20,
 
